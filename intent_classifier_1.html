@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Классификатор интентов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geologica:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:      #003087;
+    --blue-mid:  #004db3;
+    --blue-light:#e8eef8;
+    --blue-dim:  #c2d0e8;
+    --orange:    #D4610C;
+    --orange-lt: #fdf0e8;
+    --orange-md: #f5a55a;
+    --white:     #ffffff;
+    --off-white: #f5f7fc;
+    --text:      #0a1a3a;
+    --text-muted:#4a5f7a;
+    --border:    #d0daea;
+    --radius:    10px;
+    --radius-lg: 16px;
+  }
+
+  html, body { min-height: 100vh; background: var(--off-white); color: var(--text); font-family: 'Geologica', sans-serif; }
+
+  header {
+    background: var(--blue);
+    padding: 0 2.5rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 38px; height: 38px;
+    background: var(--orange); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.06em; color: var(--white); line-height: 1; }
+  .logo-text span { color: var(--orange-md); }
+  .header-badge {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px 10px; border-radius: 100px;
+  }
+
+  .hero {
+    background: var(--blue); padding: 3rem 2.5rem 2.5rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ''; position: absolute; right: -60px; top: -80px;
+    width: 340px; height: 340px; border-radius: 50%;
+    border: 48px solid rgba(255,255,255,0.04);
+  }
+  .hero::before {
+    content: ''; position: absolute; right: 80px; bottom: -100px;
+    width: 220px; height: 220px; border-radius: 50%;
+    border: 32px solid rgba(212,97,12,0.12);
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--orange-md); margin-bottom: 1rem;
+  }
+  .hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 56px); letter-spacing: 0.04em;
+    color: var(--white); line-height: 1.05; max-width: 600px; margin-bottom: 0.75rem;
+  }
+  .hero h1 em { color: var(--orange-md); font-style: normal; }
+  .hero-sub { font-size: 14px; color: rgba(255,255,255,0.55); max-width: 480px; line-height: 1.7; }
+
+  main { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem 4rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; }
+
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    font-family: 'Geologica', sans-serif; font-size: 12.5px;
+    padding: 6px 13px; border-radius: 100px;
+    border: 1px solid var(--border); background: var(--white); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+  .input-wrap { position: relative; margin-top: 0.5rem; }
+  textarea#inp {
+    width: 100%; font-family: 'Geologica', sans-serif; font-size: 15px; line-height: 1.65;
+    padding: 1rem 4rem 1rem 1.25rem;
+    border: 2px solid var(--border); border-radius: var(--radius-lg);
+    background: var(--white); color: var(--text); resize: none; outline: none;
+    transition: border-color 0.2s; min-height: 90px;
+  }
+  textarea#inp::placeholder { color: #a0aec0; }
+  textarea#inp:focus { border-color: var(--blue); }
+  textarea#inp.err { border-color: #c0392b; }
+
+  .send-btn {
+    position: absolute; right: 12px; bottom: 12px;
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--blue); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.12s;
+  }
+  .send-btn:hover { background: var(--blue-mid); }
+  .send-btn:active { transform: scale(0.93); }
+  .send-btn svg { width: 18px; height: 18px; color: white; }
+
+  .hint {
+    display: none; font-size: 13px; line-height: 1.6;
+    padding: 0.75rem 1rem; border-radius: var(--radius); border-left: 3px solid;
+    margin-top: 0.75rem; animation: fadeIn 0.25s ease;
+  }
+  .hint.gibberish { display: block; background: #fdf3f2; color: #7b241c; border-color: #c0392b; }
+  .hint.retry     { display: block; background: #fef9ec; color: #7d5a00; border-color: var(--orange); }
+
+  .result { display: none; animation: slideUp 0.3s ease; }
+  .result.visible { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+
+  .result-top { display: flex; align-items: center; gap: 12px; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 5px 13px; border-radius: 100px;
+  }
+  .status-pill.ok   { background: #e6f7f1; color: #0f6e56; }
+  .status-pill.low  { background: #fef5e7; color: #8a4e00; }
+  .status-pill.bad  { background: #fdf3f2; color: #7b241c; }
+  .status-pill.unkn { background: var(--blue-light); color: var(--blue); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .conf-block { display: flex; align-items: center; gap: 16px; }
+  .conf-num {
+    font-family: 'Bebas Neue', sans-serif; font-size: 48px;
+    letter-spacing: 0.02em; color: var(--blue); line-height: 1; min-width: 80px;
+  }
+  .conf-bar-area { flex: 1; }
+  .conf-bar-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; font-weight: 600; }
+  .conf-track { height: 8px; background: var(--blue-light); border-radius: 99px; overflow: hidden; }
+  .conf-fill  { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .meta-cell { background: var(--off-white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .meta-cell-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; }
+  .meta-cell-value { font-size: 15px; font-weight: 500; color: var(--text); }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 100px; }
+  .tag-obj  { background: var(--blue-light); color: var(--blue);   border: 1px solid var(--blue-dim); }
+  .tag-int  { background: var(--orange-lt);  color: var(--orange); border: 1px solid #f5c89a; }
+  .tag-none { background: var(--off-white);  color: var(--text-muted); border: 1px solid var(--border); }
+
+  footer { text-align: center; font-size: 12px; color: #a0aec0; padding: 1.5rem 0 2.5rem; }
+
+  @media (max-width: 520px) {
+    .meta-grid { grid-template-columns: 1fr; }
+    .hero { padding: 2rem 1.25rem 2rem; }
+    main { padding: 1.5rem 1rem 3rem; }
+    header { padding: 0 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="anim-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-mark">
+      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 2L19.5 7V15L11 20L2.5 15V7L11 2Z" fill="white" opacity="0.9"/>
+        <path d="M11 6L16 9V14L11 17L6 14V9L11 6Z" fill="#D4610C"/>
+      </svg>
+    </div>
+    <div class="logo-text">Intent <span>Classifier</span></div>
+  </div>
+  <div class="header-badge">NLP · Insurance</div>
+</header>
+
+<div class="hero">
+  <div class="hero-tag"><span class="hero-tag-dot"></span> Инструмент классификации</div>
+  <h1>Анализ <em>интентов</em><br>клиентских запросов</h1>
+  <p class="hero-sub">Введите текст обращения — система определит объект страхования и намерение клиента, а также проверит качество ввода.</p>
+</div>
+
+<main>
+
+  <div class="card">
+    <div class="section-label">Примеры запросов</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Введите запрос клиента</div>
+    <div class="input-wrap">
+      <textarea id="inp" rows="3" placeholder="Например: хочу продлить КАСКО на автомобиль..."></textarea>
+      <button class="send-btn" id="sendBtn" title="Классифицировать">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="card result" id="result">
+    <div class="result-top">
+      <div class="status-pill" id="statusPill"><span class="status-dot"></span><span id="statusText"></span></div>
+    </div>
+    <div class="conf-block">
+      <div class="conf-num" id="confNum">0%</div>
+      <div class="conf-bar-area">
+        <div class="conf-bar-label">Уверенность классификации</div>
+        <div class="conf-track"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-cell">
+        <div class="meta-cell-label">Объект</div>
+        <div class="meta-cell-value" id="metaObj">—</div>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-cell-label">Намерение</div>
+        <div class="meta-cell-value" id="metaInt">—</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label" style="margin-bottom:0.6rem;">Теги</div>
+      <div class="tag-row" id="tagRow"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Intent Classifier · NLP Toolkit · v1.0</footer>
+
+<script>
+// ── OBJECTS ──────────────────────────────────────────────────────────────────
+// Виды страхования (полисы)
+const POLICY_TYPES = {
+  'КАСКО':           ['каско'],
+  'ОСАГО':           ['осаго','автогражданк','гражданк'],
+  'ДМС':             ['дмс','добровольн.{0,5}медицин','медицинск.{0,5}страхов','полис здоровь'],
+  'ОМС':             ['омс','обязательн.{0,5}медицин'],
+  'страхование жизни':['страхован.{0,5}жизни','жизнь','жизни','нсж','инвестицион.{0,5}страхован','рисков.{0,5}жизни'],
+  'ипотечное':       ['ипотечн','ипотек'],
+  'туристическое':   ['туристическ','туристск','путешеств','выезд.{0,5}за рубеж','загран','туристск.{0,5}полис','вза'],
+  'от НС':           ['несчастн.{0,5}случа','нс ','от нс','травм'],
+  'имущественное':   ['имуществ','квартир','дом.{0,5}страхован','страховани.{0,5}дом','страховани.{0,5}квартир','недвижим'],
+  'грузовое':        ['груз','карго','cargo'],
+  'морское':         ['морск','судно','корабл','яхт','флот','vessel'],
+  'авиационное':     ['авиацион','самолёт','самолет','воздушн','ракет','космическ'],
+  'животных':        ['животн','питомц','кошк','собак','пет','зоо','ветеринар'],
+  'бизнес / корпоративное': ['корпоративн','бизнес.{0,5}страхован','предприяти','юридическ.{0,5}лиц','коммерч'],
+};
+
+// Объекты (не полисы, а цифровые точки входа и общие)
+const DIGITAL_OBJECTS = {
+  'личный кабинет':    ['личн.{0,5}кабинет','лк ','в лк','мой.{0,5}кабинет','личном.{0,5}кабинете','аккаунт'],
+  'мобильное приложение': ['моб.{0,5}приложени','приложени','апп','app','мобилк','телефон.{0,5}приложени'],
+  'сайт':              ['сайт','сайте','портал','website'],
+  'полис':             ['полис','страховк','договор','страховани','полиса','контракт'],
+};
+
+// ── INTENTS ──────────────────────────────────────────────────────────────────
+const INTENTS = {
+  'купить':       ['купи','приобрест','оформи','заключ','хочу страховк','застраховать','подключ','новый полис','выписа','открыть полис','хочу полис'],
+  'продлить':     ['продли','продлен','пролонг','renewал','renewal','продлить','срок.{0,5}истёк','истекает','закончил','продления'],
+  'расторгнуть':  ['расторг','расторжени','закрыть.{0,5}полис','закрыт.{0,5}договор'],
+  'изменить':     ['измен','поменя','обновить','скоррект','заменить','внест','правк','корректир','измените','смените','другой.{0,5}адрес','другие.{0,5}данные','изменить.{0,5}данные'],
+  'аннулировать': ['аннулир','отмен','отказ.{0,5}от полис','отказ.{0,5}от страховк','признать.{0,5}недейств','cancel'],
+  'скачать':      ['скача','загрузи','скачать','получить.{0,5}документ','выгрузи','pdf','выслать','пришлите','отправьте.{0,5}полис','скинь'],
+  'добавить':     ['добав','включи','дополни','расшири','добавить.{0,5}водител','добавить.{0,5}объект','ещё одн','плюс один'],
+  'оплатить':     ['оплат','оплачу','заплат','платёж','счёт','переведи','перевод','задолженность','взнос','квитанц','оплаты'],
+  'узнать':       ['узнать','расскаж','подскаж','как','когда','где','сколько','что такое','информаци','статус','провери','уточн','интересу','хочу знать','подскажите'],
+  'подать заявку на выплату': ['подать.{0,5}заявк','заявлени.{0,5}на выплат','страховой случай','дтп','авари','повреждени','ущерб','убыток','выплат','возмещ','компенсац'],
+  // Техническая помощь / авторизация
+  'не могу войти': ['не могу.{0,5}войт','не входи','войти.{0,5}не получ','не пускает','не открывает','доступ.{0,5}закрыт','заблокирован','заблокировали'],
+  'ошибка':        ['ошибк','error','не работает','глючит','вылетает','зависает','слетело','баг','сбо','неполадк','проблем.{0,5}с сайт','проблем.{0,5}с приложени'],
+  'пин-код':       ['пин.{0,5}код','пинкод','pin','не пришёл.{0,5}код','смс.{0,5}не пришл','код.{0,5}не приход','код подтвержден','не получаю.{0,5}код','код.{0,5}не прих'],
+  'регистрация':   ['регистрац','зарегистрир','создать.{0,5}аккаунт','создать.{0,5}учётну','новый.{0,5}пользоват','signup','sign up','завести.{0,5}аккаунт'],
+  'авторизация':   ['авторизац','авторизоват','авторизир','логин','login','войт','вход','sign in','signin','войти.{0,5}в систем'],
+  'восстановить пароль': ['восстановить.{0,5}паро','забыл.{0,5}паро','сброс.{0,5}паро','reset.{0,5}password','новый.{0,5}паро','смена.{0,5}паро'],
+};
+
+const EXAMPLES = [
+  'Хочу купить КАСКО на машину',
+  'Продлите мой полис ОСАГО',
+  'Как скачать полис ДМС?',
+  'Хочу добавить водителя в страховку',
+  'Не могу войти в личный кабинет',
+  'Не приходит смс с пин-кодом',
+  'Ошибка в мобильном приложении',
+  'Как зарегистрироваться на сайте?',
+  'Хочу аннулировать полис страхования жизни',
+  'Подать заявку на выплату по ДТП',
+  'Расторгнуть договор ипотечного страхования',
+  'аылвфвы блаблабла йцуке',
+  'пролон',
+];
+
+// ── ENGINE ───────────────────────────────────────────────────────────────────
+function vowelRatio(s) {
+  const l = s.replace(/[^а-яёa-z]/gi,'');
+  if (!l.length) return 0;
+  return (l.match(/[аеёиоуыэюяaeiou]/gi)||[]).length / l.length;
+}
+
+function isGibberish(text) {
+  const t = text.trim();
+  if (/^[^а-яёa-z0-9\s]{4,}$/i.test(t)) return true;
+  if (/([а-яёa-z])\1{3,}/i.test(t)) return true;
+  if (t.length < 3) return true;
+  const words = t.split(/\s+/).filter(w=>w.length>1);
+  if (!words.length) return true;
+  const weird = words.filter(w => { const r=vowelRatio(w); return r===0||r>0.85; });
+  return weird.length / Math.max(words.length,1) > 0.6;
+}
+
+function matchRegexMap(text, map) {
+  const tl = text.toLowerCase();
+  const scores = {};
+  for (const [k, patterns] of Object.entries(map)) {
+    scores[k] = patterns.filter(p => {
+      try { return new RegExp(p,'i').test(tl); } catch(e) { return tl.includes(p); }
+    }).length;
+  }
+  return Object.entries(scores).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+}
+
+function classify(text) {
+  if (isGibberish(text)) return { type:'gibberish', objects:[], intents:[], confidence:0 };
+
+  // merge policy types and digital objects
+  const allObjects = { ...POLICY_TYPES, ...DIGITAL_OBJECTS };
+  const objs = matchRegexMap(text, allObjects);
+  const ints = matchRegexMap(text, INTENTS);
+
+  const total = objs.reduce((s,[,v])=>s+v,0) + ints.reduce((s,[,v])=>s+v,0);
+  if (!total) return { type:'unknown', objects:[], intents:[], confidence:0 };
+
+  const mo = objs[0]?.[1]||0, mi = ints[0]?.[1]||0;
+  const conf = Math.min(100, Math.round((mo*40 + mi*60)*1.2 + (total>2?15:0)));
+  return {
+    type: conf >= 45 ? 'ok' : 'low',
+    objects: objs.slice(0,3).map(([k])=>k),
+    intents:  ints.slice(0,2).map(([k])=>k),
+    confidence: conf,
+  };
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render(text) {
+  const res = classify(text.trim());
+  const hint     = document.getElementById('hint');
+  const inp      = document.getElementById('inp');
+  const pill     = document.getElementById('statusPill');
+  const stText   = document.getElementById('statusText');
+  const confNum  = document.getElementById('confNum');
+  const confFill = document.getElementById('confFill');
+  const metaObj  = document.getElementById('metaObj');
+  const metaInt  = document.getElementById('metaInt');
+  const tagRow   = document.getElementById('tagRow');
+  const result   = document.getElementById('result');
+
+  hint.className = 'hint';
+  inp.className  = '';
+  tagRow.innerHTML = '';
+  result.className = 'card result visible';
+
+  const COLORS = {
+    ok:        ['ok',   'Классифицировано',     '#1D9E75'],
+    low:       ['low',  'Низкая уверенность',   '#D4610C'],
+    gibberish: ['bad',  'Мусорный ввод',         '#c0392b'],
+    unknown:   ['unkn', 'Интент не определён',   '#003087'],
+  };
+  const [cls, label, barColor] = COLORS[res.type];
+  pill.className = 'status-pill ' + cls;
+  stText.textContent = label;
+  confNum.textContent = res.confidence + '%';
+  confFill.style.background = barColor;
+  confFill.style.width = res.confidence + '%';
+
+  if (res.type === 'gibberish') {
+    metaObj.textContent = '—'; metaInt.textContent = '—';
+    tagRow.innerHTML = '<span class="tag tag-none">🚫 Нечитаемый текст</span>';
+    hint.className = 'hint gibberish';
+    hint.innerHTML = '<strong>Ошибка ввода.</strong> Текст не является осмысленным запросом. Попросите клиента переформулировать обращение.';
+    inp.className = 'err';
+    launchSadEmojis();
+  } else if (res.type === 'unknown') {
+    metaObj.textContent = '—'; metaInt.textContent = '—';
+    tagRow.innerHTML = '<span class="tag tag-none">Нет совпадений</span>';
+    hint.className = 'hint retry';
+    hint.innerHTML = '💬 <strong>Запрос не распознан.</strong> Уточните у клиента продукт и конкретное действие, которое он хочет выполнить.';
+    launchSadEmojis();
+  } else {
+    metaObj.textContent = res.objects.length ? res.objects.join(', ') : '—';
+    metaInt.textContent = res.intents.length  ? res.intents.join(', ') : '—';
+    res.objects.forEach(o => tagRow.insertAdjacentHTML('beforeend', `<span class="tag tag-obj">📋 ${o}</span>`));
+    res.intents.forEach(i  => tagRow.insertAdjacentHTML('beforeend', `<span class="tag tag-int">→ ${i}</span>`));
+    if (res.type === 'low') {
+      hint.className = 'hint retry';
+      hint.innerHTML = '💬 <strong>Частичное совпадение.</strong> Уточните у клиента продукт и конкретное действие для более точной классификации.';
+      launchSadEmojis();
+    } else {
+      launchConfetti();
+    }
+  }
+}
+
+// ── ANIMATIONS ───────────────────────────────────────────────────────────────
+const canvas = document.getElementById('anim-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame = null;
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Confetti / fireworks
+function launchConfetti() {
+  clearAnimation();
+  const count = 120;
+  const colors = ['#003087','#004db3','#D4610C','#f5a55a','#ffffff','#1D9E75','#f5c518'];
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      type: 'confetti',
+      x: Math.random() * canvas.width,
+      y: -10,
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 4 + 2,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 5 + 3,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1,
+      life: 1,
+      decay: Math.random() * 0.008 + 0.004,
+    });
+  }
+  // burst rockets from bottom
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => launchRocket(colors), i * 280);
+  }
+  animLoop();
+  setTimeout(clearAnimation, 4000);
+}
+
+function launchRocket(colors) {
+  const x = canvas.width * (0.25 + Math.random() * 0.5);
+  const burst = 36;
+  for (let j = 0; j < burst; j++) {
+    const angle = (j / burst) * Math.PI * 2;
+    const speed = Math.random() * 5 + 2;
+    particles.push({
+      type: 'spark',
+      x, y: canvas.height * 0.6,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1, life: 1,
+      decay: Math.random() * 0.022 + 0.012,
+      r: Math.random() * 3 + 1.5,
+    });
+  }
+}
+
+// Sad emoji rain
+function launchSadEmojis() {
+  clearAnimation();
+  const emojis = ['😢','😭','🙁','😞','😔','💔','😿'];
+  for (let i = 0; i < 22; i++) {
+    particles.push({
+      type: 'emoji',
+      x: Math.random() * canvas.width,
+      y: -40 - Math.random() * 200,
+      vy: Math.random() * 1.8 + 0.8,
+      vx: (Math.random() - 0.5) * 0.8,
+      size: Math.floor(Math.random() * 20 + 22),
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      alpha: 1, life: 1,
+      decay: Math.random() * 0.004 + 0.003,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: (Math.random() - 0.5) * 0.06,
+    });
+  }
+  animLoop();
+  setTimeout(clearAnimation, 4500);
+}
+
+function animLoop() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles = particles.filter(p => p.life > 0);
+  if (!particles.length) { clearAnimation(); return; }
+
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.alpha);
+
+    if (p.type === 'confetti') {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.07;
+      p.angle += p.spin; p.life -= p.decay; p.alpha = p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    } else if (p.type === 'spark') {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+      p.life -= p.decay; p.alpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    } else if (p.type === 'emoji') {
+      p.wobble += p.wobbleSpeed;
+      p.x += p.vx + Math.sin(p.wobble) * 0.6;
+      p.y += p.vy; p.life -= p.decay; p.alpha = p.life;
+      ctx.font = p.size + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.emoji, p.x, p.y);
+    }
+    ctx.restore();
+  });
+
+  animFrame = requestAnimationFrame(animLoop);
+}
+
+function clearAnimation() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  particles = [];
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+const chipsEl = document.getElementById('chips');
+EXAMPLES.forEach(ex => {
+  const b = document.createElement('button');
+  b.className = 'chip'; b.textContent = ex;
+  b.onclick = () => { document.getElementById('inp').value = ex; render(ex); };
+  chipsEl.appendChild(b);
+});
+
+document.getElementById('sendBtn').onclick = () => {
+  const v = document.getElementById('inp').value;
+  if (v.trim()) render(v);
+};
+document.getElementById('inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = e.target.value; if (v.trim()) render(v); }
+});
+</script>
+</body>
+</html>
